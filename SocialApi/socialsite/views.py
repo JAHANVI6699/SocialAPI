@@ -15,7 +15,7 @@ class UserCreateAPIView(viewsets.ModelViewSet):
       permission_classes = [permissions.IsAuthenticated]
       if self.action == 'create':
          permission_classes = [permissions.AllowAny]
-         return super().get_permissions()
+      return super().get_permissions()
 
    queryset = User.objects.all()
    serializer_class = UserSerializer
