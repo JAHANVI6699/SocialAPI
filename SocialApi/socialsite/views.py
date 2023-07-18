@@ -2,24 +2,25 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import render
 # Create your views here.
-from rest_framework import filters, generics, mixins, permissions
+from rest_framework import filters, generics, mixins, permissions,viewsets
 from rest_framework.response import Response
 
 from .models import FriendRequest, User
 from .serializers import FriendRequestSerializer, UserSerializer
 
 
-class UserCreateAPIView(mixins.CreateModelMixin, generics.GenericAPIView):
-   permission_classes = [permissions.AllowAny]
+class UserCreateAPIView(viewsets.ModelViewSet):
+   
+   def get_permissions(self):
+      permission_classes = [permissions.IsAuthenticated]
+      if self.action == 'create':
+         permission_classes = [permissions.AllowAny]
+         return super().get_permissions()
+
    queryset = User.objects.all()
    serializer_class = UserSerializer
-
-
-   def post(self, request, *args, **kwargs):
-      request.POST._mutable = True
-      request.data['password'] = make_password(request.data['password'])
-      request.POST._mutable = False
-      return self.create(request, *args, **kwargs)
+   filter_backends = [filters.SearchFilter]
+   search_fields = ['email','first_name']
 
 
 class UserLoginAPIView(generics.GenericAPIView):
@@ -29,21 +30,13 @@ class UserLoginAPIView(generics.GenericAPIView):
    queryset = User.objects.all()
 
    def post(self, request):
-   	serializer = UserSerializer
-   	user = authenticate(email=request.POST['email'], password=request.POST['password'])
-   	if user:
+      serializer = UserSerializer
+      user = authenticate(email=request.POST['email'], password=request.POST['password'])
+      if user:
          serializer = self.get_serializer(user)
          return Response(serializer.data)
 
-   	return Response({'detail': 'User not found'}, status=400)
-
-class UserSearchAPIView(generics.ListAPIView):
-   permission_classes = [permissions.IsAuthenticated]
-   queryset = User.objects.all()
-   serializer_class = UserSerializer
-   filter_backends = [filters.SearchFilter]
-   search_fields = ['email','first_name']
-
+      return Response({'detail': 'User not found'}, status=400)
 
 class FriendRequestAPIView(generics.GenericAPIView):
    serializer_class = FriendRequestSerializer
