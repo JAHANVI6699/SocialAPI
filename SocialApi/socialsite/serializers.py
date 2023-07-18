@@ -12,9 +12,10 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['email', 'password']
 
-    def post(self, validated_data):
-    	validated_data['password'] = make_password(validated_data['password'])
+    def create(self, validated_data):
     	instance = User.objects.create(**validated_data)
+    	instance.password = make_password(validated_data['password'])
+    	instance.save()
     	return instance
 
 class FriendRequestSerializer(serializers.ModelSerializer):
